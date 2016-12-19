@@ -5,20 +5,32 @@ using DG.Tweening;
 namespace EnemyHitTest {
 	public class LightEnemy : Enemy {
 
+		[Space(15)]
+		public Ease HitGroundEase;
+		public float HitGroundDuration = 0.1f;
 
-		[Header("Duration")]
-		public float HitDuration = 0.1f;
+		[Space(15)]
+		public Ease HitAirEase;
 		public float HitAirDuration = 0.1f;
-		public float WakeUpDuration = 0.5f;
+
+		[Space(15)]
+		public Ease JuggleEase;
 		public float JuggleDuration = 0.5f;
+
+		[Space(15)]
+		public float BounceDuration = 0.5f;
+
+		[Space(15)]
+		public float WakeUpDuration = 0.5f;
+
 
 		Coroutine JuggleRoutine;
 		Coroutine WakeUpRoutine;
 		Coroutine IdleRoutine;
 		Coroutine FallRoutine;
-
 		Coroutine HitGroundRoutine;
 		Coroutine HitAirRoutine;
+		Coroutine BounceRoutine;
 
 		Coroutine _CurrentRoutine;
 		Coroutine CurrentRoutine{
@@ -37,6 +49,7 @@ namespace EnemyHitTest {
 		{
 			base.Update ();
 			UpdateWakeUp();
+			CheckSlamFallGrounded();
 		}
 
 		#region implemented abstract members of Enemy
@@ -51,7 +64,7 @@ namespace EnemyHitTest {
 				HitGroundRoutine = StartCoroutine(IEHitGround(hitVector));
 				CurrentRoutine = HitGroundRoutine;
 			}else{
-				HitAirRoutine = StartCoroutine(IEHitAir());
+				HitAirRoutine = StartCoroutine(IEHitAir(hitVector));
 				CurrentRoutine = HitAirRoutine;
 			}
 
@@ -81,6 +94,11 @@ namespace EnemyHitTest {
 			CurrentRoutine = WakeUpRoutine;
 		}
 
+		public override void Bounce ()
+		{
+			BounceRoutine = StartCoroutine(IEBounceRoutine());
+			CurrentRoutine = BounceRoutine;
+		}
 
 		#endregion
 
@@ -91,12 +109,12 @@ namespace EnemyHitTest {
 			State = EnemyState.HIT;				
 			Vector3 prevPos = Body.transform.position;
 			float xMovement = prevPos.x + hitVector.x;
-			transform.DOMoveX(xMovement, HitDuration, false);
+			transform.DOMoveX(xMovement, HitGroundDuration, false).SetEase(HitGroundEase);
 
 			if (OnBeginHitGround != null)
 				OnBeginHitGround(hitVector);
 			
-			yield return new WaitForSeconds(HitDuration);
+			yield return new WaitForSeconds(HitGroundDuration);
 
 			if (OnEndHit != null) 
 				OnEndHit();
@@ -105,9 +123,13 @@ namespace EnemyHitTest {
 
 		}
 
-		IEnumerator IEHitAir() {
+		IEnumerator IEHitAir(Vector2 hitVector) {
 			State = EnemyState.HIT_AIR;
-			yield return null;
+
+			Vector3 prevPos = Body.transform.position;
+			float xMovement = prevPos.x + hitVector.x;
+			float yMovement = prevPos.y + hitVector.y;
+			transform.DOMove(new Vector2(xMovement, yMovement), HitGroundDuration, false).SetEase(HitAirEase);
 
 			if (OnBeginHitAir != null)
 				OnBeginHitAir();
@@ -127,7 +149,7 @@ namespace EnemyHitTest {
 			Vector3 prevPos = Body.transform.position;
 			float yMovement = 0;
 			yMovement = prevPos.y + hitVector.y;
-			Body.DOMoveY(yMovement, JuggleDuration, false);
+			Body.DOMoveY(yMovement, JuggleDuration, false).SetEase(JuggleEase);
 
 			if (OnJuggle != null)
 				OnJuggle(hitVector);
@@ -164,15 +186,49 @@ namespace EnemyHitTest {
 				OnFall();
 		}
 
+		IEnumerator IEBounceRoutine() {
+			State = EnemyState.BOUNCE;
+			yield return null;
 
+			if (OnBounce != null)
+				OnBounce();
+
+			yield return new WaitForSeconds(BounceDuration);
+
+			WakeUp();
+		}
 
 		#endregion
 
+		void CheckSlamFallGrounded() {
+			if (State == EnemyState.FALL) {
+				if (IsFallGrounded) {
+					SlamFall();
+					Bounce();
+				}
+			}
+		}
+
+		// langsung pok
+		void SlamFall() {
+			RaycastHit2D[] groundRays = Physics2D.RaycastAll(this.transform.position, new Vector2(0, -1), FallGroundRayDistance);
+			for (int i = 0; i < groundRays.Length; i++) {
+				Collider2D coll = groundRays[i].collider;
+				if (coll != null) {					
+					// not self
+					if (!SelfCollider.Contains(coll)){
+						
+						transform.position = new Vector2(this.transform.position.x, groundRays[i].point.y + GroundRayDistance);
+					}
+				}
+			}
+		}
+
 		void UpdateWakeUp() {
 			// wake up when grounded
-			if ( (State == EnemyState.FALL) && IsGrounded) {			
-				WakeUp();
-			}
+//			if ( (State == EnemyState.FALL) && IsGrounded) {			
+//				WakeUp();
+//			}
 		}
 
 		protected override void UpdateSpeed ()

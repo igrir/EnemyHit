@@ -4,6 +4,10 @@ using System.Collections;
 namespace EnemyHitTest{
 	public class EnemyHitter : MonoBehaviour {
 
+		public Vector2 HitRightVector = new Vector2(-0.5f, 0);
+		public Vector2 HitLeftVector = new Vector2(0.5f, 0);
+		public Vector2 JuggleVector  = new Vector2(0, 1.5f);
+
 		Enemy[] Enemies;
 
 		// Use this for initialization
@@ -30,24 +34,24 @@ namespace EnemyHitTest{
 
 		}
 
-		void HitRight() {			
+		public void HitRight() {			
 			for (int i = 0; i < Enemies.Length; i++) {
 				Enemy hittable = Enemies[i];
-				hittable.Hit( new Vector2(-0.5f, 0f)	);
+				hittable.Hit( HitRightVector );
 			}
 		}
 
-		void HitLeft() {			
+		public void HitLeft() {			
 			for (int i = 0; i < Enemies.Length; i++) {
 				Enemy hittable = Enemies[i];
-				hittable.Hit(new Vector2(0.5f, 0f));
+				hittable.Hit( HitLeftVector );
 			}
 		}
 
-		void Juggle() {
+		public void Juggle() {
 			for (int i = 0; i < Enemies.Length; i++) {
 				Enemy hittable = Enemies[i];
-				hittable.Juggle(new Vector2(0f, 1.5f));
+				hittable.Juggle( JuggleVector );
 			}
 		}
 	}

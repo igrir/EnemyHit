@@ -5,6 +5,7 @@
 		HIT,
 		HIT_AIR,
 		JUGGLE,
-		FALL
+		FALL,
+		BOUNCE
 	}
 }

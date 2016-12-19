@@ -10,7 +10,9 @@ namespace EnemyHitTest{
 
 		protected EnemyState State;
 
-		public float GroundRayDistance = 1.5f;
+		public float GroundRayDistance = 1.8f;
+		public float FallGroundRayDistance = 2.3f;
+
 		public float FallingSpeed = 0.2f;
 
 		protected Rigidbody2D Body;
@@ -19,6 +21,13 @@ namespace EnemyHitTest{
 		protected bool IsGrounded{
 			get{
 				return _IsGrounded;
+			}
+		}
+
+		bool _IsFallGrounded;
+		protected bool IsFallGrounded{
+			get{
+				return _IsFallGrounded;
 			}
 		}
 
@@ -44,8 +53,11 @@ namespace EnemyHitTest{
 		public delegate void _OnHitAir();
 		public _OnHitAir OnBeginHitAir;
 
+		public delegate void _OnBounce();
+		public _OnBounce OnBounce;
 
-		List<Collider2D> SelfCollider;
+
+		protected List<Collider2D> SelfCollider;
 
 
 		// Use this for initialization
@@ -60,6 +72,7 @@ namespace EnemyHitTest{
 		// Update is called once per frame
 		protected virtual void Update () {		
 			CheckGrounded();
+			CheckFallGrounded();
 		}
 
 		protected virtual void FixedUpdate() {
@@ -81,6 +94,21 @@ namespace EnemyHitTest{
 			}
 		}
 
+		void CheckFallGrounded() {
+			_IsFallGrounded = false;
+			RaycastHit2D[] groundRays = Physics2D.RaycastAll(this.transform.position, new Vector2(0, -1), FallGroundRayDistance);
+			Debug.DrawRay(new Vector2(this.transform.position.x+0.5f, this.transform.position.y), new Vector2(0, -1) * FallGroundRayDistance, new Color(1,0,0));
+			for (int i = 0; i < groundRays.Length; i++) {
+				Collider2D coll = groundRays[i].collider;
+				if (coll != null) {					
+					// not self
+					if (!SelfCollider.Contains(coll)){
+						_IsFallGrounded = true;
+					}
+				}
+			}
+		}
+
 		protected virtual void UpdateSpeed() {
 			if (!IsGrounded) {
 				Body.gravityScale = 0;
@@ -96,6 +124,7 @@ namespace EnemyHitTest{
 		public abstract void Idle ();
 		public abstract void Fall();
 		public abstract void WakeUp();
+		public abstract void Bounce();
 
 	}
 }

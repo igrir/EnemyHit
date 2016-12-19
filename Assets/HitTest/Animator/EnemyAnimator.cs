@@ -10,6 +10,7 @@ namespace EnemyHitTest{
 		const string BOOL_IDLE 			= "idle";
 		const string BOOL_FALL 			= "fall";
 		const string BOOL_WAKE_UP 		= "wake_up";
+		const string BOOL_BOUNCE 		= "bounce";
 
 
 		Enemy Parent;
@@ -27,6 +28,7 @@ namespace EnemyHitTest{
 			Parent.OnIdle 				+= Enemy_OnIdle;
 			Parent.OnFall 				+= Enemy_OnFall;
 			Parent.OnWakeUp 			+= Enemy_OnWakeUp;
+			Parent.OnBounce				+= Enemy_OnBounce;
 		}
 		
 		// Update is called once per frame
@@ -65,6 +67,7 @@ namespace EnemyHitTest{
 			Anim.SetBool(BOOL_IDLE, false);
 			Anim.SetBool(BOOL_HIT_GROUND, false);
 			Anim.SetBool(BOOL_HIT_AIR, false);
+			Anim.SetBool(BOOL_BOUNCE, false);
 		}
 
 		void Enemy_OnIdle() {
@@ -87,9 +90,16 @@ namespace EnemyHitTest{
 		void Enemy_OnWakeUp() {
 			Anim.SetBool(BOOL_WAKE_UP, true);
 
+			Anim.SetBool(BOOL_BOUNCE, false);
+
 			Anim.SetBool(BOOL_FALL, false);
 			Anim.SetBool(BOOL_JUGGLE, false);
 			Anim.SetBool(BOOL_IDLE, false);
+		}
+
+		void Enemy_OnBounce() {
+			Anim.SetBool(BOOL_BOUNCE, true);
+			Anim.SetBool(BOOL_FALL, false);
 		}
 
 	}
