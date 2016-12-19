@@ -57,7 +57,7 @@ namespace EnemyHitTest {
 		{
 
 			// waking up? don't disturb
-			if (State == EnemyState.WAKE_UP) 
+			if (State == EnemyState.WAKE_UP || State == EnemyState.BOUNCE) 
 				return;
 			
 			if (IsGrounded) {
@@ -72,6 +72,11 @@ namespace EnemyHitTest {
 
 		public override void Juggle (Vector2 hitVector)
 		{
+
+			// waking up? don't disturb
+			if (State == EnemyState.WAKE_UP || State == EnemyState.BOUNCE) 
+				return;
+
 			JuggleRoutine = StartCoroutine(IEJuggle(hitVector));
 			CurrentRoutine = JuggleRoutine;
 		}
