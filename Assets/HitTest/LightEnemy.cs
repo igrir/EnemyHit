@@ -21,6 +21,10 @@ namespace EnemyHitTest {
 		public float JuggleDuration = 0.5f;
 
 		[Space(15)]
+		public Ease BounceImpactEase;
+		public float BounceImpactDuration = 0.5f;
+
+		[Space(15)]
 		public float BounceDuration = 0.5f;
 
 		[Space(15)]
@@ -34,6 +38,8 @@ namespace EnemyHitTest {
 		Coroutine HitGroundRoutine;
 		Coroutine HitAirRoutine;
 		Coroutine BounceRoutine;
+		Coroutine SlamRoutine;
+		Coroutine BounceImpactRoutine;
 
 		Tween _MovementTween;
 		Tween MovementTween{
@@ -63,8 +69,8 @@ namespace EnemyHitTest {
 		protected override void Update ()
 		{
 			base.Update ();
-			UpdateWakeUp();
-			CheckSlamFallGrounded();
+			UpdateImmediateGrounded();
+			UpdateSlam();
 		}
 
 		#region implemented abstract members of Enemy
@@ -81,9 +87,9 @@ namespace EnemyHitTest {
 				CurrentRoutine = HitGroundRoutine;
 			}else{
 
-				if (IsGrounded) {					
-					HitAirRoutine = StartCoroutine(IEHitAir(new Vector2(hitVector.x, BounceImpact)));
-					CurrentRoutine = HitAirRoutine;					
+				if (IsFallGrounded) {
+					BounceImpactRoutine = StartCoroutine(IEBounceImpact(new Vector2(hitVector.x, BounceImpact)));
+					CurrentRoutine = BounceImpactRoutine;					
 				}else{
 					HitAirRoutine = StartCoroutine(IEHitAir(hitVector));
 					CurrentRoutine = HitAirRoutine;					
@@ -127,6 +133,12 @@ namespace EnemyHitTest {
 			CurrentRoutine = BounceRoutine;
 		}
 
+		public override void Slam ()
+		{
+			SlamRoutine = StartCoroutine(IESlamRoutine());
+			CurrentRoutine = SlamRoutine;
+		}
+
 		#endregion
 
 		#region Action Routines
@@ -136,7 +148,7 @@ namespace EnemyHitTest {
 			State = EnemyState.HIT;				
 			Vector3 prevPos = Body.transform.position;
 			float xMovement = prevPos.x + hitVector.x;
-			MovementTween = transform.DOMoveX(xMovement, HitGroundDuration, false).SetEase(HitGroundEase);
+			MovementTween = Body.DOMoveX(xMovement, HitGroundDuration, false).SetEase(HitGroundEase);
 
 			if (OnBeginHitGround != null)
 				OnBeginHitGround(hitVector);
@@ -156,12 +168,38 @@ namespace EnemyHitTest {
 			Vector3 prevPos = Body.transform.position;
 			float xMovement = prevPos.x + hitVector.x;
 			float yMovement = prevPos.y + hitVector.y;
-			MovementTween = transform.DOMove(new Vector2(xMovement, yMovement), HitGroundDuration, false).SetEase(HitAirEase);
+			MovementTween = Body.DOMove(new Vector2(xMovement, yMovement), HitGroundDuration, false).SetEase(HitAirEase);
 
 			if (OnBeginHitAir != null)
 				OnBeginHitAir();
 
 			yield return new WaitForSeconds(HitAirDuration);
+
+			if (OnEndHit != null) 
+				OnEndHit();
+
+			// ada gerakan ke bawah pas di udara
+			if (hitVector.y < 0) {
+				// endingnya ngeslam aja
+				Slam();
+			}else{
+				// kalau nggak ada jadi kayak daun aja
+				Fall();
+			}
+		}
+
+		IEnumerator IEBounceImpact(Vector2 hitVector) {
+			State = EnemyState.BOUNCE_IMPACT;
+
+			Vector3 prevPos = Body.transform.position;
+			float xMovement = prevPos.x + hitVector.x;
+			float yMovement = prevPos.y + hitVector.y;
+			MovementTween = Body.DOMove(new Vector2(xMovement, yMovement), BounceImpactDuration, false).SetEase(BounceImpactEase);
+
+			if (OnBeginBounceImpact != null)
+				OnBeginBounceImpact();
+
+			yield return new WaitForSeconds(BounceImpactDuration);
 
 			if (OnEndHit != null) 
 				OnEndHit();
@@ -176,7 +214,7 @@ namespace EnemyHitTest {
 			Vector3 prevPos = Body.transform.position;
 			float xMovement = prevPos.x + hitVector.x;
 			float yMovement = prevPos.y + hitVector.y;
-			MovementTween = transform.DOMove(new Vector2(xMovement, yMovement), JuggleDuration, false).SetEase(JuggleEase);
+			MovementTween = Body.DOMove(new Vector2(xMovement, yMovement), JuggleDuration, false).SetEase(JuggleEase);
 
 			if (OnJuggle != null)
 				OnJuggle(hitVector);
@@ -224,19 +262,29 @@ namespace EnemyHitTest {
 			WakeUp();
 		}
 
+		IEnumerator IESlamRoutine() {
+			State = EnemyState.SLAM;
+			yield return null;
+
+			MovementTween = null;
+
+			if (OnSlam != null) 
+				OnSlam();
+		}
+
 		#endregion
 
-		void CheckSlamFallGrounded() {
+		void UpdateImmediateGrounded() {
 			if (State == EnemyState.FALL) {
 				if (IsFallGrounded) {
-					SlamFall();
+					ImmediateGrounded();
 					Bounce();
 				}
 			}
 		}
 
 		// langsung pok
-		void SlamFall() {
+		void ImmediateGrounded() {
 			RaycastHit2D[] groundRays = Physics2D.RaycastAll(this.transform.position, new Vector2(0, -1), FallGroundRayDistance);
 			for (int i = 0; i < groundRays.Length; i++) {
 				Collider2D coll = groundRays[i].collider;
@@ -250,11 +298,14 @@ namespace EnemyHitTest {
 			}
 		}
 
-		void UpdateWakeUp() {
-			// wake up when grounded
-//			if ( (State == EnemyState.FALL) && IsGrounded) {			
-//				WakeUp();
-//			}
+		void UpdateSlam() {
+			if (State == EnemyState.SLAM) {
+
+				// pok ngebounce
+				if (IsFallGrounded) {
+					Bounce();
+				}
+			}
 		}
 
 		protected override void UpdateSpeed ()
@@ -263,7 +314,13 @@ namespace EnemyHitTest {
 				Body.gravityScale = 0;
 
 				if (State != EnemyState.JUGGLE && State != EnemyState.HIT_AIR) {
-					Body.velocity = new Vector2(0, -FallingSpeed);
+
+					if (State == EnemyState.SLAM) {
+						Body.velocity = new Vector2(0, -SlamSpeed);
+					}else{
+						Body.velocity = new Vector2(0, -FallingSpeed);
+					}
+
 				}else{
 					Body.velocity = new Vector2(0, 0);
 				}

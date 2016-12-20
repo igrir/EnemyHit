@@ -11,6 +11,8 @@ namespace EnemyHitTest{
 		const string BOOL_FALL 			= "fall";
 		const string BOOL_WAKE_UP 		= "wake_up";
 		const string BOOL_BOUNCE 		= "bounce";
+		const string BOOL_SLAM			= "slam";
+		const string BOOL_BOUNCE_IMPACT	= "bounce_impact";
 
 
 		Enemy Parent;
@@ -29,6 +31,9 @@ namespace EnemyHitTest{
 			Parent.OnFall 				+= Enemy_OnFall;
 			Parent.OnWakeUp 			+= Enemy_OnWakeUp;
 			Parent.OnBounce				+= Enemy_OnBounce;
+			Parent.OnSlam				+= Enemy_OnSlam;
+			Parent.OnBeginBounceImpact  += Enemy_OnBeginBounceImpact;
+
 		}
 		
 		// Update is called once per frame
@@ -57,6 +62,7 @@ namespace EnemyHitTest{
 			Anim.SetBool(BOOL_HIT_GROUND, false);
 			Anim.SetBool(BOOL_HIT_AIR, false);
 			Anim.SetBool(BOOL_IDLE, false);
+			Anim.SetBool(BOOL_BOUNCE_IMPACT, false);
 		}
 
 		void Enemy_OnJuggle(Vector2 hitVector) {
@@ -68,6 +74,7 @@ namespace EnemyHitTest{
 			Anim.SetBool(BOOL_HIT_GROUND, false);
 			Anim.SetBool(BOOL_HIT_AIR, false);
 			Anim.SetBool(BOOL_BOUNCE, false);
+			Anim.SetBool(BOOL_SLAM, false);
 		}
 
 		void Enemy_OnIdle() {
@@ -95,11 +102,34 @@ namespace EnemyHitTest{
 			Anim.SetBool(BOOL_FALL, false);
 			Anim.SetBool(BOOL_JUGGLE, false);
 			Anim.SetBool(BOOL_IDLE, false);
+			Anim.SetBool(BOOL_SLAM, false);
 		}
 
 		void Enemy_OnBounce() {
 			Anim.SetBool(BOOL_BOUNCE, true);
+
 			Anim.SetBool(BOOL_FALL, false);
+			Anim.SetBool(BOOL_SLAM, false);
+			Anim.SetBool(BOOL_BOUNCE_IMPACT, false);
+		}
+
+		void Enemy_OnSlam() {
+			Anim.SetBool(BOOL_SLAM, true);
+
+			Anim.SetBool(BOOL_JUGGLE, false);
+			Anim.SetBool(BOOL_HIT_AIR, false);
+		}
+
+		void Enemy_OnBeginBounceImpact() {
+			Anim.SetBool(BOOL_BOUNCE_IMPACT, true);
+
+			Anim.SetBool(BOOL_WAKE_UP, false);
+			Anim.SetBool(BOOL_FALL, false);
+			Anim.SetBool(BOOL_IDLE, false);
+			Anim.SetBool(BOOL_HIT_GROUND, false);
+			Anim.SetBool(BOOL_HIT_AIR, false);
+			Anim.SetBool(BOOL_BOUNCE, false);
+			Anim.SetBool(BOOL_SLAM, false);
 		}
 
 	}

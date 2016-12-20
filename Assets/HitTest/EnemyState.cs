@@ -6,6 +6,8 @@
 		HIT_AIR,
 		JUGGLE,
 		FALL,
-		BOUNCE
+		BOUNCE,
+		SLAM,
+		BOUNCE_IMPACT
 	}
 }

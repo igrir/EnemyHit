@@ -14,6 +14,7 @@ namespace EnemyHitTest{
 		public float FallGroundRayDistance = 2.3f;
 
 		public float FallingSpeed = 0.2f;
+		public float SlamSpeed = 5f;
 
 		protected Rigidbody2D Body;
 
@@ -50,11 +51,17 @@ namespace EnemyHitTest{
 		public delegate void _OnFall();
 		public _OnFall OnFall;
 
-		public delegate void _OnHitAir();
-		public _OnHitAir OnBeginHitAir;
+		public delegate void _OnBeginHitAir();
+		public _OnBeginHitAir OnBeginHitAir;
+
+		public delegate void _OnBeginBounceImpact();
+		public _OnBeginBounceImpact OnBeginBounceImpact;
 
 		public delegate void _OnBounce();
 		public _OnBounce OnBounce;
+
+		public delegate void _OnSlam();
+		public _OnSlam OnSlam;
 
 
 		protected List<Collider2D> SelfCollider;
@@ -71,12 +78,13 @@ namespace EnemyHitTest{
 		
 		// Update is called once per frame
 		protected virtual void Update () {		
-			CheckGrounded();
-			CheckFallGrounded();
+			
 		}
 
 		protected virtual void FixedUpdate() {
 			UpdateSpeed();
+			CheckGrounded();
+			CheckFallGrounded();
 		}
 
 		void CheckGrounded() {
@@ -125,6 +133,7 @@ namespace EnemyHitTest{
 		public abstract void Fall();
 		public abstract void WakeUp();
 		public abstract void Bounce();
+		public abstract void Slam();
 
 	}
 }
