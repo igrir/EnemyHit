@@ -11,6 +11,15 @@ namespace EnemyHitTest{
 
 		Enemy[] Enemies;
 
+		public delegate void _OnHit();
+		public _OnHit OnHit;
+
+		public delegate void _OnJuggle();
+		public _OnJuggle OnJuggle;
+
+		public delegate void _OnAerialAttack();
+		public _OnAerialAttack OnAerialAttack;
+
 		// Use this for initialization
 		void Start () {
 			Enemies = GameObject.FindObjectsOfType<Enemy>();
@@ -44,6 +53,9 @@ namespace EnemyHitTest{
 				Enemy hittable = Enemies[i];
 				hittable.Hit( HitRightVector );
 			}
+
+			if (OnHit != null)
+				OnHit();
 		}
 
 		public void HitLeft() {			
@@ -51,6 +63,9 @@ namespace EnemyHitTest{
 				Enemy hittable = Enemies[i];
 				hittable.Hit( HitLeftVector );
 			}
+
+			if (OnHit != null)
+				OnHit();
 		}
 
 		public void Juggle() {
@@ -58,6 +73,9 @@ namespace EnemyHitTest{
 				Enemy hittable = Enemies[i];
 				hittable.Juggle( JuggleVector );
 			}
+
+			if (OnJuggle != null)
+				OnJuggle();
 		}
 
 		public void AerialAttack() {
@@ -65,6 +83,9 @@ namespace EnemyHitTest{
 				Enemy hittable = Enemies[i];
 				hittable.Hit( AerialAttackVector );
 			}
+
+			if (OnAerialAttack != null)
+				OnAerialAttack();
 		}
 	}
 }
