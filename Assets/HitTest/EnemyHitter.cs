@@ -7,6 +7,7 @@ namespace EnemyHitTest{
 		public Vector2 HitRightVector = new Vector2(-0.5f, 0);
 		public Vector2 HitLeftVector = new Vector2(0.5f, 0);
 		public Vector2 JuggleVector  = new Vector2(0, 1.5f);
+		public Vector2 AerialAttackVector = new Vector2(0.5f, -1.5f);
 
 		Enemy[] Enemies;
 
@@ -28,6 +29,10 @@ namespace EnemyHitTest{
 
 			if (Input.GetKeyDown(KeyCode.A)) {
 				Juggle();
+			}
+
+			if (Input.GetKeyDown(KeyCode.C)) {
+				AerialAttack();
 			}
 
 
@@ -52,6 +57,13 @@ namespace EnemyHitTest{
 			for (int i = 0; i < Enemies.Length; i++) {
 				Enemy hittable = Enemies[i];
 				hittable.Juggle( JuggleVector );
+			}
+		}
+
+		public void AerialAttack() {
+			for (int i = 0; i < Enemies.Length; i++) {
+				Enemy hittable = Enemies[i];
+				hittable.Hit( AerialAttackVector );
 			}
 		}
 	}

@@ -5,6 +5,9 @@ using DG.Tweening;
 namespace EnemyHitTest {
 	public class LightEnemy : Enemy {
 
+		// bounce setelah dipukul dari atas
+		public float BounceImpact = 2;
+
 		[Space(15)]
 		public Ease HitGroundEase;
 		public float HitGroundDuration = 0.1f;
@@ -31,6 +34,18 @@ namespace EnemyHitTest {
 		Coroutine HitGroundRoutine;
 		Coroutine HitAirRoutine;
 		Coroutine BounceRoutine;
+
+		Tween _MovementTween;
+		Tween MovementTween{
+			get{
+				return _MovementTween;
+			}
+			set{
+				if (_MovementTween != null)
+					_MovementTween.Kill(false);
+				_MovementTween = value;
+			}
+		}
 
 		Coroutine _CurrentRoutine;
 		Coroutine CurrentRoutine{
@@ -59,13 +74,20 @@ namespace EnemyHitTest {
 			// waking up? don't disturb
 			if (State == EnemyState.WAKE_UP || State == EnemyState.BOUNCE) 
 				return;
-			
-			if (IsGrounded) {
+
+			// grounded and wasn't hit air
+			if (IsGrounded && State != EnemyState.HIT_AIR) {
 				HitGroundRoutine = StartCoroutine(IEHitGround(hitVector));
 				CurrentRoutine = HitGroundRoutine;
 			}else{
-				HitAirRoutine = StartCoroutine(IEHitAir(hitVector));
-				CurrentRoutine = HitAirRoutine;
+
+				if (IsGrounded) {					
+					HitAirRoutine = StartCoroutine(IEHitAir(new Vector2(hitVector.x, BounceImpact)));
+					CurrentRoutine = HitAirRoutine;					
+				}else{
+					HitAirRoutine = StartCoroutine(IEHitAir(hitVector));
+					CurrentRoutine = HitAirRoutine;					
+				}
 			}
 
 		}
@@ -114,7 +136,7 @@ namespace EnemyHitTest {
 			State = EnemyState.HIT;				
 			Vector3 prevPos = Body.transform.position;
 			float xMovement = prevPos.x + hitVector.x;
-			transform.DOMoveX(xMovement, HitGroundDuration, false).SetEase(HitGroundEase);
+			MovementTween = transform.DOMoveX(xMovement, HitGroundDuration, false).SetEase(HitGroundEase);
 
 			if (OnBeginHitGround != null)
 				OnBeginHitGround(hitVector);
@@ -134,7 +156,7 @@ namespace EnemyHitTest {
 			Vector3 prevPos = Body.transform.position;
 			float xMovement = prevPos.x + hitVector.x;
 			float yMovement = prevPos.y + hitVector.y;
-			transform.DOMove(new Vector2(xMovement, yMovement), HitGroundDuration, false).SetEase(HitAirEase);
+			MovementTween = transform.DOMove(new Vector2(xMovement, yMovement), HitGroundDuration, false).SetEase(HitAirEase);
 
 			if (OnBeginHitAir != null)
 				OnBeginHitAir();
@@ -152,9 +174,9 @@ namespace EnemyHitTest {
 			State = EnemyState.JUGGLE;
 
 			Vector3 prevPos = Body.transform.position;
-			float yMovement = 0;
-			yMovement = prevPos.y + hitVector.y;
-			Body.DOMoveY(yMovement, JuggleDuration, false).SetEase(JuggleEase);
+			float xMovement = prevPos.x + hitVector.x;
+			float yMovement = prevPos.y + hitVector.y;
+			MovementTween = transform.DOMove(new Vector2(xMovement, yMovement), JuggleDuration, false).SetEase(JuggleEase);
 
 			if (OnJuggle != null)
 				OnJuggle(hitVector);
@@ -166,7 +188,6 @@ namespace EnemyHitTest {
 
 		IEnumerator IEWakeUp() {
 			State = EnemyState.WAKE_UP;
-
 			if (OnWakeUp != null)
 				OnWakeUp();
 			yield return new WaitForSeconds(WakeUpDuration);
