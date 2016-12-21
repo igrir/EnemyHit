@@ -8,12 +8,21 @@ using System.Linq;
 namespace EnemyHitTest{
 	public abstract class Enemy : MonoBehaviour {
 
+		public LayerMask Layer;
+		public Vector2 RBVelocity;
+		public Transform Tut;
+
+		[SerializeField] protected Transform FootPosition;
+		protected Vector2 GroundPos;
+
 		protected EnemyState State;
 
 		public float GroundRayDistance = 1.8f;
 		public float FallGroundRayDistance = 2.3f;
 
 		public float FallingSpeed = 0.2f;
+
+		public Ease SlamEase;
 		public float SlamSpeed = 5f;
 
 		protected Rigidbody2D Body;
@@ -78,19 +87,27 @@ namespace EnemyHitTest{
 		
 		// Update is called once per frame
 		protected virtual void Update () {		
-			
+			RBVelocity = Body.velocity;
 		}
 
 		protected virtual void FixedUpdate() {
 			UpdateSpeed();
 			CheckGrounded();
 			CheckFallGrounded();
+
+			float vy = Mathf.Infinity;
+			RaycastHit2D groundRay = Physics2D.Raycast(this.FootPosition.position, new Vector2(0, -1), vy, Layer);
+
+			Vector2 rayPos = groundRay.point;
+			GroundPos = rayPos;
+			Tut.transform.position = rayPos;
+
 		}
 
 		void CheckGrounded() {
 			_IsGrounded = false;
-			RaycastHit2D[] groundRays = Physics2D.RaycastAll(this.transform.position, new Vector2(0, -1), GroundRayDistance);
-			Debug.DrawRay(this.transform.position, new Vector2(0, -1) * GroundRayDistance, new Color(1,0,0));
+			RaycastHit2D[] groundRays = Physics2D.RaycastAll(this.FootPosition.position, new Vector2(0, -1), GroundRayDistance, Layer);
+			Debug.DrawRay(this.FootPosition.position, new Vector2(0, -1) * GroundRayDistance, new Color(1,0,0));
 			for (int i = 0; i < groundRays.Length; i++) {
 				Collider2D coll = groundRays[i].collider;
 				if (coll != null) {					
@@ -104,8 +121,8 @@ namespace EnemyHitTest{
 
 		void CheckFallGrounded() {
 			_IsFallGrounded = false;
-			RaycastHit2D[] groundRays = Physics2D.RaycastAll(this.transform.position, new Vector2(0, -1), FallGroundRayDistance);
-			Debug.DrawRay(new Vector2(this.transform.position.x+0.5f, this.transform.position.y), new Vector2(0, -1) * FallGroundRayDistance, new Color(1,0,0));
+			RaycastHit2D[] groundRays = Physics2D.RaycastAll(this.FootPosition.position, new Vector2(0, -1), FallGroundRayDistance, Layer);
+			Debug.DrawRay(new Vector2(this.FootPosition.position.x+0.5f, this.FootPosition.position.y), new Vector2(0, -1) * FallGroundRayDistance, new Color(1,0,0));
 			for (int i = 0; i < groundRays.Length; i++) {
 				Collider2D coll = groundRays[i].collider;
 				if (coll != null) {					

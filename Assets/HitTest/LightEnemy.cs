@@ -4,7 +4,6 @@ using DG.Tweening;
 
 namespace EnemyHitTest {
 	public class LightEnemy : Enemy {
-
 		// bounce setelah dipukul dari atas
 		public float BounceImpact = 2;
 
@@ -70,7 +69,6 @@ namespace EnemyHitTest {
 		{
 			base.Update ();
 			UpdateImmediateGrounded();
-			UpdateSlam();
 		}
 
 		#region implemented abstract members of Enemy
@@ -135,8 +133,10 @@ namespace EnemyHitTest {
 
 		public override void Slam ()
 		{
-			SlamRoutine = StartCoroutine(IESlamRoutine());
-			CurrentRoutine = SlamRoutine;
+			if (State == EnemyState.FALL || State == EnemyState.JUGGLE) {
+				SlamRoutine = StartCoroutine(IESlamRoutine());
+				CurrentRoutine = SlamRoutine;
+			}
 		}
 
 		#endregion
@@ -266,7 +266,16 @@ namespace EnemyHitTest {
 			State = EnemyState.SLAM;
 			yield return null;
 
-			MovementTween = null;
+//			MovementTween = null;
+			float distance = transform.position.y - GroundPos.y;
+			float slamTime = distance / SlamSpeed;
+			Vector2 targetPos = new Vector2(
+				GroundPos.x,
+				GroundPos.y + (Body.position.y - FootPosition.position.y)
+			);
+			if (!IsFallGrounded) {
+				MovementTween = Body.DOMove(targetPos, slamTime, false).SetEase(SlamEase);
+			}
 
 			if (OnSlam != null) 
 				OnSlam();
@@ -275,7 +284,7 @@ namespace EnemyHitTest {
 		#endregion
 
 		void UpdateImmediateGrounded() {
-			if (State == EnemyState.FALL) {
+			if (State == EnemyState.FALL || State == EnemyState.SLAM) {
 				if (IsFallGrounded) {
 					ImmediateGrounded();
 					Bounce();
@@ -285,25 +294,15 @@ namespace EnemyHitTest {
 
 		// langsung pok
 		void ImmediateGrounded() {
-			RaycastHit2D[] groundRays = Physics2D.RaycastAll(this.transform.position, new Vector2(0, -1), FallGroundRayDistance);
+			MovementTween = null;
+			RaycastHit2D[] groundRays = Physics2D.RaycastAll(FootPosition.position, new Vector2(0, -1), FallGroundRayDistance, Layer);
 			for (int i = 0; i < groundRays.Length; i++) {
 				Collider2D coll = groundRays[i].collider;
 				if (coll != null) {					
 					// not self
 					if (!SelfCollider.Contains(coll)){
-						
-						transform.position = new Vector2(this.transform.position.x, groundRays[i].point.y + GroundRayDistance);
+						transform.position = new Vector2(this.transform.position.x, groundRays[i].point.y + FallGroundRayDistance + (FootPosition.position.y - this.transform.position.y));
 					}
-				}
-			}
-		}
-
-		void UpdateSlam() {
-			if (State == EnemyState.SLAM) {
-
-				// pok ngebounce
-				if (IsFallGrounded) {
-					Bounce();
 				}
 			}
 		}
@@ -316,7 +315,7 @@ namespace EnemyHitTest {
 				if (State != EnemyState.JUGGLE && State != EnemyState.HIT_AIR) {
 
 					if (State == EnemyState.SLAM) {
-						Body.velocity = new Vector2(0, -SlamSpeed);
+//						Body.velocity = new Vector2(0, -SlamSpeed);
 					}else{
 						Body.velocity = new Vector2(0, -FallingSpeed);
 					}
